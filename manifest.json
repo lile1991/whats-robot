@@ -1,0 +1,40 @@
+{
+  "name": "WhatsAppRobot",
+  "version": "1.0",
+  "manifest_version": 3,
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'",
+    "sandbox": "sandbox allow-scripts; script-src 'self'; object-src 'self'"
+  },
+  "icons": {
+    "16": "images/ico.png",
+    "32": "images/ico.png",
+    "48": "images/ico.png",
+    "64": "images/ico.png",
+    "128": "images/ico.png"
+  },
+  "action": {
+    "default_icon": {
+      "16": "images/ico.png",
+      "32": "images/ico.png",
+      "48": "images/ico.png",
+      "64": "images/ico.png"
+    },
+    "default_title": "WhatsApp-Robot",
+    "default_popup": "popup.html"
+  },
+  "permissions": ["storage", "activeTab", "scripting"],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://web.whatsapp.com/",
+        "https://web.whatsapp.com/*"
+      ],
+      "js": [
+        "js/popup.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ]
+}
