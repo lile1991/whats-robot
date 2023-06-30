@@ -105,7 +105,6 @@ function getMessage(messageRow) {
         const month = sendTimeMatcher[4]
         const day = sendTimeMatcher[5]
         const sendTimeStr = `${year}-${month}-${day} ${hour}:${minute}`
-        console.log('sendTimeStr=', sendTimeStr)
         sendTime = Date.parse(sendTimeStr) / 1000
     } else {
         console.log('Parsed date error: ', prePlainText)
@@ -183,10 +182,10 @@ function calculationSum(messageOfGroup, message) {
         } else if (message.content.startsWith('*')) {
             // messageOfGroup.sum *= parseFloat(message.content)
             // 保留两位小数
-            messageOfGroup.sum = Math.floor((messageOfGroup.sum * parseFloat(message.content)) * 100) / 100
+            messageOfGroup.sum = Math.floor((messageOfGroup.sum * parseFloat(message.content.substring(1))) * 100) / 100
         } else if (message.content.startsWith('/')) {
             // 保留两位小数
-            messageOfGroup.sum = Math.floor((messageOfGroup.sum / parseFloat(message.content)) * 100) / 100
+            messageOfGroup.sum = Math.floor((messageOfGroup.sum / parseFloat(message.content.substring(1))) * 100) / 100
         }
     }
 }
@@ -217,7 +216,7 @@ function fetchMessages() {
                     messageOfGroup = {
                         sum: 0,
                         lastSendTime: 0,
-                        messages: 0
+                        messages: {}
                     }
                     messages[message.messageType][message.groupId] = messageOfGroup
                 }
@@ -227,7 +226,7 @@ function fetchMessages() {
                     return
                 }
 
-                let messaged = messageOfGroup[message.messageId]
+                let messaged = messageOfGroup.messages[message.messageId]
                 if (messaged) {
                     // 消息已解析， 不处理
                     return
@@ -266,7 +265,7 @@ function fetchMessages() {
     }   // End if..else
 
     console.log('setTimeout fetchMessages')
-    setTimeout(fetchMessages, 2000)
+    setTimeout(fetchMessages, 1000)
 }
 
 // localStorage.removeItem("robotMessages")
