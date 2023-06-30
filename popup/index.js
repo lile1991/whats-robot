@@ -2,9 +2,14 @@ import { putMessage } from "./floating";
 
 let messages = {
     // 群组消息
-    GROUP: {},
+    GROUP: {
+        // sum: 0,
+        // lastSendTime: 0,
+        // messages: {}
+    },
     // 个人消息
-    PERSON: {}
+    PERSON: {
+    }
 }
 const GROUPS = {}
 
@@ -21,16 +26,16 @@ function init() {
  * @param groupId 群组ID, 如果对个人的话这个值等于sender
  * @param messageId 消息ID
  * @param sender 发送方
- * @param date 发送时间
+ * @param sendTime 发送时间
  * @param content 消息内容
  * @constructor
  */
-function Message(messageType, groupId, messageId, sender, date, content) {
+function Message(messageType, groupId, messageId, sender, sendTime, content) {
     this.messageType = messageType
     this.groupId = groupId
     this.messageId = messageId
     this.sender = sender
-    this.date = date
+    this.sendTime = sendTime
     this.content = content
 }
 
@@ -91,6 +96,20 @@ function getMessage(messageRow) {
 
     // 发送时间 [下午5:27, 2023年6月29日] lile oct10:
     const prePlainText = copyableText.getAttribute("data-pre-plain-text")
+    const sendTimeMatcher = /\[[^d]+(\d+):(\d+), (\d+)年(\d+)月(\d+)日\]/.exec(prePlainText)
+    let sendTime = null
+    if(sendTimeMatcher) {
+        const hour = sendTimeMatcher[1]
+        const minute = sendTimeMatcher[2]
+        const year = sendTimeMatcher[3]
+        const month = sendTimeMatcher[4]
+        const day = sendTimeMatcher[5]
+        const sendTimeStr = `${year}-${month}-${day} ${hour}:${minute}`
+        console.log('sendTimeStr=', sendTimeStr)
+        sendTime = Date.parse(sendTimeStr) / 1000
+    } else {
+        console.log('Parsed date error: ', prePlainText)
+    }
 
     // 消息文本
     let messageText = copyableText.innerText
@@ -107,7 +126,7 @@ function getMessage(messageRow) {
         }
     }
 
-    return new Message(messageType, groupId, messageId, sender, prePlainText, messageText)
+    return new Message(messageType, groupId, messageId, sender, sendTime, messageText)
 }
 
 function sendMessage(messageOfGroup) {
@@ -142,7 +161,7 @@ function sendMessage(messageOfGroup) {
                 console.log('Notfound send message button')
             }
         }
-    }, 3500)
+    }, 3000)
 
 
     // 按Enter发送
@@ -196,13 +215,20 @@ function fetchMessages() {
                 messageOfGroup = messages[message.messageType][message.groupId]
                 if (!messageOfGroup) {
                     messageOfGroup = {
-                        sum: 0
+                        sum: 0,
+                        lastSendTime: 0,
+                        messages: 0
                     }
                     messages[message.messageType][message.groupId] = messageOfGroup
                 }
+
+                if(messageOfGroup.lastSendTime > message.sendTime) {
+                    // 过期消息， 不处理
+                    return
+                }
+
                 let messaged = messageOfGroup[message.messageId]
                 if (messaged) {
-                    console.log('Notfound new message.')
                     // 消息已解析， 不处理
                     return
                 }
@@ -213,7 +239,12 @@ function fetchMessages() {
                 calculationSum(messageOfGroup, message)
 
                 // 保存消息
-                messageOfGroup[message.messageId] = message
+                messageOfGroup.messages[message.messageId] = message
+
+                // 最后一条消息发送时间
+                if(messageOfGroup.lastSendTime < message.sendTime) {
+                    messageOfGroup.lastSendTime = message.sendTime
+                }
 
                 // 显示消息到悬浮框
                 putMessage(GROUPS[message.groupId], message)
