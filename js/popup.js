@@ -1,10 +1,11 @@
 const WhatsAppMessages = {
     init() {
+        const that = WhatsAppMessages
         const robotMessages = localStorage.getItem('robotMessages')
         if(robotMessages) {
-            WhatsAppMessages.messages = JSON.parse(robotMessages)
+            that.messages = JSON.parse(robotMessages)
         } else {
-            WhatsAppMessages.messages = {
+            that.messages = {
                 // 群组消息
                 GROUP: {},
                 // 个人消息
@@ -32,6 +33,7 @@ const WhatsAppMessages = {
         this.content = content
     },
     getMessage(messageRow) {
+        const that = WhatsAppMessages
         const dataEle = messageRow.querySelector("div[data-id]")
         if(!dataEle) {
             return null
@@ -104,9 +106,10 @@ const WhatsAppMessages = {
             }
         }
 
-        return new WhatsAppMessages.Message(messageType, groupId, messageId, sender, prePlainText, messageText)
+        return new that.Message(messageType, groupId, messageId, sender, prePlainText, messageText)
     },
     fetchMessages() {
+        const that = WhatsAppMessages
         const messagesContainer = document.querySelector("[role='application']")
         if(messagesContainer == null) {
             console.log('[WARN] Notfound messages container...')
@@ -116,14 +119,14 @@ const WhatsAppMessages = {
             let isNew = false
             let messageOfGroup
             messagesRows.forEach(messagesRow => {
-                const message = WhatsAppMessages.getMessage(messagesRow)
+                const message = that.getMessage(messagesRow)
                 if(message) {
-                    messageOfGroup = WhatsAppMessages.messages[message.messageType][message.groupId]
+                    messageOfGroup = that.messages[message.messageType][message.groupId]
                     if(!messageOfGroup) {
                         messageOfGroup = {
                             sum: 0
                         }
-                        WhatsAppMessages.messages[message.messageType][message.groupId] = messageOfGroup
+                        that.messages[message.messageType][message.groupId] = messageOfGroup
                     }
                     let messaged = messageOfGroup[message.messageId]
                     if(messaged) {
@@ -149,13 +152,13 @@ const WhatsAppMessages = {
 
             if(isNew) {
                 // 发送汇总
-                WhatsAppMessages.sendMessage(messageOfGroup)
+                that.sendMessage(messageOfGroup)
 
                 // 更新本地缓存
-                localStorage.setItem('robotMessages', JSON.stringify(WhatsAppMessages.messages))
+                localStorage.setItem('robotMessages', JSON.stringify(that.messages))
 
                 // 打印一条日志
-                console.log('messages=', WhatsAppMessages.messages)
+                console.log('messages=', that.messages)
             }
         }   // End if..else
 
