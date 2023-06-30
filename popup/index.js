@@ -246,7 +246,7 @@ function fetchMessages() {
                 }
 
                 // 显示消息到悬浮框
-                putMessage(GROUPS[message.groupId], message)
+                putMessage(GROUPS[message.groupId], messageOfGroup.sum, message)
 
                 console.log('message=', message)
             }

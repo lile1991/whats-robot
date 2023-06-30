@@ -1,5 +1,5 @@
 // 悬浮窗
-export function putMessage(groupName, message) {
+export function putMessage(groupName, totalMoney, message) {
     let messagesFloating = document.querySelector("#messages-floating")
     if (!messagesFloating) {
         // 创建悬浮窗
@@ -34,10 +34,14 @@ export function putMessage(groupName, message) {
     }
 
     // 设置/更新群组名称
-    groupTitleElement.innerText = groupName
+    groupTitleElement.innerText = `${groupName}(${totalMoney})`
 
     // 添加消息到悬浮框
     const messageElement = document.createElement('li')
     messageElement.innerText = message.content
-    groupMessagesElement.appendChild(messageElement)
+    if(groupMessagesElement.firstChild) {
+        groupMessagesElement.insertBefore(messageElement, groupMessagesElement.firstChild)
+    } else {
+        groupMessagesElement.appendChild(messageElement)
+    }
 }   // End putMessage
