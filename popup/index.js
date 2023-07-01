@@ -17,6 +17,15 @@ function init() {
     const robotMessages = localStorage.getItem('robotMessages')
     if (robotMessages) {
         messages = JSON.parse(robotMessages)
+
+        // init putMessages
+        for(let groupId in messages.GROUP) {
+            const group = messages.GROUP[groupId]
+            for(let i = group.messages.length - 1; i >= 0; i --) {
+                const message = group.messages[i]
+                putMessage(group, message)
+            }
+        }
     }
 }
 
