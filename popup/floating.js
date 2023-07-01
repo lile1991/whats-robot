@@ -34,9 +34,14 @@ export function putMessage(group, message) {
     }
 
     // 设置/更新群组名称
-    groupTitleElement.html(`${group.name}(${group.sum})`)
+    groupTitleElement.html(`${group.groupName}(${group.sum})`)
 
     // 添加消息到悬浮框
     const messageElement = $(`<li>${message.sum}: ${message.value}=${message.content}</li>`)
     groupMessagesElement.prepend(messageElement)
 }   // End putMessage
+
+export function clearGroup(group) {
+    // 移除群组父元素
+    $(`#messages-floating #g-${group.groupId}`).remove()
+}
