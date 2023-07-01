@@ -1,4 +1,5 @@
 import { putMessage } from "./floating";
+import { scaleNumber, evalMath } from "./utils.js";
 
 let messages = {
     // 群组消息
@@ -11,7 +12,6 @@ let messages = {
     PERSON: {
     }
 }
-const GROUPS = {}
 
 function init() {
     const robotMessages = localStorage.getItem('robotMessages')
@@ -119,17 +119,18 @@ function getMessage(messageRow) {
     // +200
     // -200
     // -200 * 4.5
+    // -(200 * 4.5) / (3 + 1)
     // 清空
     // value =
     let value = 0
     if (messageText !== '/Clear') {
-        const messageTextMatcher = /^([+\-*/])(\d+[+\-*/.\d]*)$/.exec(messageText)
+        const messageTextMatcher = /^([+\-*/])([(]?\d+[+\-*/.\d()]*)$/.exec(messageText)
         if (!messageTextMatcher) {
             // 不重要的消息
             return null
         }
 
-        value = scaleNumber(eval(messageTextMatcher[2]))
+        value = scaleNumber(evalMath(messageTextMatcher[2]))
     }
 
     return new Message(messageType, groupId, messageId, sender, sendTime, messageText, value)
@@ -179,13 +180,13 @@ function sendMessage(messageOfGroup) {
 
 
 function calculationSum(messageOfGroup, message) {
-    if (message.content === 'Clear') {
+    if (message.content === '/Clear') {
         messageOfGroup.sum = 0
     } else {
         if (message.content.startsWith('+')) {
-            messageOfGroup.sum += message.value
+            messageOfGroup.sum = scaleNumber(messageOfGroup.sum + message.value)
         } else if (message.content.startsWith('-')) {
-            messageOfGroup.sum -= message.value
+            messageOfGroup.sum = scaleNumber(messageOfGroup.sum - message.value)
         } else if (message.content.startsWith('*')) {
             // messageOfGroup.sum *= parseFloat(message.content)
             // 保留两位小数
@@ -195,11 +196,9 @@ function calculationSum(messageOfGroup, message) {
             messageOfGroup.sum = scaleNumber(messageOfGroup.sum / message.value)
         }
     }
-}
 
-function scaleNumber(number, newScale) {
-    const size = Math.pow(10, newScale || 2)
-    return Math.floor(number * size) / size
+    // 记录当前和
+    message.sum = messageOfGroup.sum
 }
 
 function fetchMessages() {
@@ -216,29 +215,32 @@ function fetchMessages() {
 
         // 是否有新的消息
         let isNew = false
-        let messageOfGroup
+        let group
         messagesRows.forEach(messagesRow => {
             const message = getMessage(messagesRow)
             if (message) {
-                // 设置/更新群组名
-                GROUPS[message.groupId] = groupName
-
-                messageOfGroup = messages[message.messageType][message.groupId]
-                if (!messageOfGroup) {
-                    messageOfGroup = {
+                group = messages[message.messageType][message.groupId]
+                if (!group) {
+                    group = {
+                        // 初始化群组
+                        name: groupName,
                         sum: 0,
                         lastSendTime: 0,
-                        messages: {}
+                        messageMap: {},
+                        messages: []
                     }
-                    messages[message.messageType][message.groupId] = messageOfGroup
+                    messages[message.messageType][message.groupId] = group
                 }
 
-                if(messageOfGroup.lastSendTime > message.sendTime) {
+                // 更新群组名
+                group.name = groupName
+
+                if(group.lastSendTime > message.sendTime) {
                     // 过期消息， 不处理
                     return
                 }
 
-                let messaged = messageOfGroup.messages[message.messageId]
+                let messaged = group.messageMap[message.messageId]
                 if (messaged) {
                     // 消息已解析， 不处理
                     return
@@ -247,18 +249,20 @@ function fetchMessages() {
                 isNew = true
 
                 // 计算金额
-                calculationSum(messageOfGroup, message)
+                calculationSum(group, message)
 
                 // 保存消息
-                messageOfGroup.messages[message.messageId] = message
+                group.messages.push(message)
+                group.messageMap[message.messageId] = message
 
                 // 最后一条消息发送时间
-                if(messageOfGroup.lastSendTime < message.sendTime) {
-                    messageOfGroup.lastSendTime = message.sendTime
+                if(group.lastSendTime < message.sendTime) {
+                    group.lastSendTime = message.sendTime
                 }
 
+                console.log(group, message)
                 // 显示消息到悬浮框
-                putMessage(GROUPS[message.groupId], messageOfGroup.sum, message)
+                putMessage(group, message)
 
                 console.log('message=', message)
             }
@@ -266,7 +270,7 @@ function fetchMessages() {
 
         if (isNew) {
             // 发送汇总
-            sendMessage(messageOfGroup)
+            sendMessage(group)
 
             // 更新本地缓存
             localStorage.setItem('robotMessages', JSON.stringify(messages))

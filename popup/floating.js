@@ -1,47 +1,42 @@
-// 悬浮窗
-export function putMessage(groupName, totalMoney, message) {
-    let messagesFloating = document.querySelector("#messages-floating")
-    if (!messagesFloating) {
-        // 创建悬浮窗
-        const appDiv = document.querySelector("#app > div")
+import $ from 'jquery'
 
-        messagesFloating = document.createElement('div')
-        messagesFloating.setAttribute('id', 'messages-floating')
-        appDiv.appendChild(messagesFloating)
+// 悬浮窗
+export function putMessage(group, message) {
+    let messagesFloating = $("#messages-floating")
+    if (!messagesFloating.length) {
+        // 创建悬浮窗
+        // const appDiv = $("#app > div")
+
+        messagesFloating = $(`<div id="messages-floating" style="margin-top: 127px; height: 450px; background-color: yellow;"></div>`)
+
+        $(document.body).append(messagesFloating)
     }
 
     // 创建群组悬浮层
-    let groupElement = messagesFloating.querySelector(`#g-${message.groupId}`)
+    let groupElement = $(`#g-${message.groupId}`, messagesFloating)
     let groupMessagesElement
     let groupTitleElement
-    if (groupElement == null) {
+    if (!groupElement.length) {
         // 群组父元素
-        groupElement = document.createElement('div')
-        groupElement.setAttribute('id', `g-${message.groupId}`)
-        messagesFloating.appendChild(groupElement)
+        groupElement = $(`<div id="g-${message.groupId}"></div>`)
+        messagesFloating.append(groupElement)
 
         // 群组名称
-        groupTitleElement = document.createElement('h3')
-        groupTitleElement.setAttribute('id', `g-${message.groupId}-title`)
-        groupElement.appendChild(groupTitleElement)
+        groupTitleElement = $(`<h3 id="g-${message.groupId}-title"></h3>`)
+        groupElement.append(groupTitleElement)
 
         // 群组消息列表
-        groupMessagesElement = document.createElement('ul')
-        groupElement.appendChild(groupMessagesElement)
+        groupMessagesElement = $('ul')
+        groupElement.append(groupMessagesElement)
     } else {
-        groupTitleElement = groupElement.querySelector('h3')
-        groupMessagesElement = groupElement.querySelector('ul')
+        groupTitleElement = $('h3', groupElement)
+        groupMessagesElement = $('ul', groupElement)
     }
 
     // 设置/更新群组名称
-    groupTitleElement.innerText = `${groupName}(${totalMoney})`
+    groupTitleElement.html(`${group.name}(${group.sum})`)
 
     // 添加消息到悬浮框
-    const messageElement = document.createElement('li')
-    messageElement.innerText = message.content
-    if(groupMessagesElement.firstChild) {
-        groupMessagesElement.insertBefore(messageElement, groupMessagesElement.firstChild)
-    } else {
-        groupMessagesElement.appendChild(messageElement)
-    }
+    const messageElement = $('<li>${message.content}</li>')
+    groupMessagesElement.prepend(messageElement)
 }   // End putMessage
