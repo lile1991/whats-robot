@@ -28,15 +28,17 @@ function init() {
  * @param sender 发送方
  * @param sendTime 发送时间
  * @param content 消息内容
+ * @param value 值
  * @constructor
  */
-function Message(messageType, groupId, messageId, sender, sendTime, content) {
+function Message(messageType, groupId, messageId, sender, sendTime, content, value) {
     this.messageType = messageType
     this.groupId = groupId
     this.messageId = messageId
     this.sender = sender
     this.sendTime = sendTime
     this.content = content
+    this.value = value
 }
 
 function getMessage(messageRow) {
@@ -116,16 +118,21 @@ function getMessage(messageRow) {
     // 匹配消息
     // +200
     // -200
+    // -200 * 4.5
     // 清空
-    if (messageText !== 'reset') {
-        const messageTextMatcher = /^[-+*/]\d+(\.\d+)?$/.exec(messageText)
+    // value =
+    let value = 0
+    if (messageText !== '/Clear') {
+        const messageTextMatcher = /^([+\-*/])(\d+[+\-*/.\d]*)$/.exec(messageText)
         if (!messageTextMatcher) {
             // 不重要的消息
             return null
         }
+
+        value = scaleNumber(eval(messageTextMatcher[2]))
     }
 
-    return new Message(messageType, groupId, messageId, sender, sendTime, messageText)
+    return new Message(messageType, groupId, messageId, sender, sendTime, messageText, value)
 }
 
 function sendMessage(messageOfGroup) {
@@ -172,22 +179,27 @@ function sendMessage(messageOfGroup) {
 
 
 function calculationSum(messageOfGroup, message) {
-    if (message.content === 'reset') {
+    if (message.content === 'Clear') {
         messageOfGroup.sum = 0
     } else {
         if (message.content.startsWith('+')) {
-            messageOfGroup.sum += parseFloat(message.content.substring(1))
+            messageOfGroup.sum += message.value
         } else if (message.content.startsWith('-')) {
-            messageOfGroup.sum -= parseFloat(message.content)
+            messageOfGroup.sum -= message.value
         } else if (message.content.startsWith('*')) {
             // messageOfGroup.sum *= parseFloat(message.content)
             // 保留两位小数
-            messageOfGroup.sum = Math.floor((messageOfGroup.sum * parseFloat(message.content.substring(1))) * 100) / 100
+            messageOfGroup.sum = scaleNumber(messageOfGroup.sum * message.value)
         } else if (message.content.startsWith('/')) {
             // 保留两位小数
-            messageOfGroup.sum = Math.floor((messageOfGroup.sum / parseFloat(message.content.substring(1))) * 100) / 100
+            messageOfGroup.sum = scaleNumber(messageOfGroup.sum / message.value)
         }
     }
+}
+
+function scaleNumber(number, newScale) {
+    const size = Math.pow(10, newScale || 2)
+    return Math.floor(number * size) / size
 }
 
 function fetchMessages() {
