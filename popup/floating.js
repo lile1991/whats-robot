@@ -26,7 +26,7 @@ export function putMessage(group, message) {
         groupElement.append(groupTitleElement)
 
         // 群组消息列表
-        groupMessagesElement = $('ul')
+        groupMessagesElement = $('<ul></ul>')
         groupElement.append(groupMessagesElement)
     } else {
         groupTitleElement = $('h3', groupElement)
@@ -37,6 +37,6 @@ export function putMessage(group, message) {
     groupTitleElement.html(`${group.name}(${group.sum})`)
 
     // 添加消息到悬浮框
-    const messageElement = $('<li>${message.content}</li>')
+    const messageElement = $(`<li>${message.sum}: ${message.value}=${message.content}</li>`)
     groupMessagesElement.prepend(messageElement)
 }   // End putMessage
