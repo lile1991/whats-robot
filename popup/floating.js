@@ -7,7 +7,7 @@ export function putMessage(group, message) {
         // 创建悬浮窗
         // const appDiv = $("#app > div")
 
-        messagesFloating = $(`<div id="messages-floating" style="margin-top: 127px; height: 450px; padding: 20px; background-color: yellow;"></div>`)
+        messagesFloating = $(`<div id="messages-floating" style="margin-top: 127px; height: 450px; padding: 20px;"></div>`)
 
         $(document.body).append(messagesFloating)
     }
@@ -16,6 +16,7 @@ export function putMessage(group, message) {
     let groupElement = $(`#g-${message.groupId}`, messagesFloating)
     let groupMessagesElement
     let groupTitleElement
+    let totalBill
     if (!groupElement.length) {
         // 群组父元素
         groupElement = $(`<div id="g-${message.groupId}" class="groupBox"  style="position: relative; text-align: center; display: block; max-width: 70px; z-index:999; padding: 8px 20px; border-bottom:1px solid #ccc;border-left: 1px solid #ccc;border-right: 1px solid #ccc;"></div>`)
@@ -26,18 +27,26 @@ export function putMessage(group, message) {
         groupTitleElement = $(`<h3 id="g-${message.groupId}-title"></h3>`)
         groupElement.append(groupTitleElement)
         // 群组消息列表
-        groupMessagesElement = $(`<ul id="groupList" style="position: absolute; left:110px; top: 0px; border: 1px solid #ccc; background-color: #fff; z-index: 999999999; border: 1px solid #ccc; text-align: center; display:none; width: max-content;"><li style="padding:8px 20px; border-bottom: 1px solid #ccc">Bill=${group.sum}</li></ul>`)
+        groupMessagesElement = $(`<ul id="groupList" style="position: absolute; left:110px; top: 0px; border: 1px solid #ccc; background-color: #fff; z-index: 999999999; border: 1px solid #ccc; text-align: center; display:none; width: max-content;"></ul>`)
         groupElement.append(groupMessagesElement)
+
+        totalBill = $(`<li style="padding:8px 20px; border-bottom: 1px solid #ccc" class="bill-head">Bill=${group.sum}</li>`)
+        groupMessagesElement.append(totalBill)
     } else {
         groupTitleElement = $('h3', groupElement)
         groupMessagesElement = $('ul', groupElement)
+        totalBill = $('#groupList > li.bill-head', groupElement)
     }
 
     // 设置/更新群组名称
-    groupTitleElement.html(`<div style="color:#000; cursor: pointer;word-break: break-all;">${group.groupName}</div>`)
+    groupTitleElement.html(`<div style="color:#000; cursor: pointer;word-break: break-all;">${group.groupName}(${group.sum})</div>`)
+
+    // 设置总账
+    totalBill.html(`Bill=${group.sum}`)
 
     // 添加消息到悬浮框
-    const messageElement = $(`<li style="padding:8px 20px; border-bottom: 1px solid #ccc">${message.sum}: ${message.value}=${message.content}</li>`)
+    //     ${message.value}=
+    const messageElement = $(`<li style="padding:8px 20px; border-bottom: 1px solid #ccc">[${message.sum}]: ${message.content}</li>`)
     $(`#g-${message.groupId} ul li`).first().after(messageElement);
     // groupMessagesElement.prepend(messageElement)
 } // End putMessage
