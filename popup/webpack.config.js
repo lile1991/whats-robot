@@ -5,7 +5,7 @@ module.exports = {
     mode: 'production',
     entry: './index.js',
     output: {
-        path: path.resolve(__dirname, '../js'),
+        path: path.resolve(__dirname, '../../../whats-robot/js'),
         filename: 'popup.js',
     },
 };
