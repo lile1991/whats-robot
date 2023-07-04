@@ -1,4 +1,4 @@
-import { putMessage, clearGroup } from "./floating";
+import { appendMessage } from "./floating";
 import { scaleNumber, evalMath } from "./utils.js";
 
 const CLEAN_BILL_CMD = '/Clear'
@@ -25,7 +25,7 @@ function init() {
             const group = messages.GROUP[groupId]
             for(let i = group.messages.length - 1; i >= 0; i --) {
                 const message = group.messages[i]
-                putMessage(group, message)
+                appendMessage(group, message)
             }
         }
     }
@@ -107,8 +107,10 @@ function getMessage(messageRow) {
     // 消息正文
     const copyableText = dataEle.querySelector("div.copyable-text")
 
-    // 发送时间 [下午5:27, 2023年6月29日] lile oct10:
+    // 发送时间
     const prePlainText = copyableText.getAttribute("data-pre-plain-text")
+    // 中文版
+    // 发送时间 [下午5:27, 2023年6月29日] lile oct10:
     const sendTimeMatcher = /\[[^d]+(\d+):(\d+), (\d+)年(\d+)月(\d+)日\]/.exec(prePlainText)
     let sendTime = null
     if(sendTimeMatcher) {
@@ -120,7 +122,20 @@ function getMessage(messageRow) {
         const sendTimeStr = `${year}-${month}-${day} ${hour}:${minute}`
         sendTime = Date.parse(sendTimeStr) / 1000
     } else {
-        console.log('Parsed date error: ', prePlainText)
+        // 英文版
+        // [09:50, 04/07/2023] 哈:
+        const sendTimeMatcher = /\[(\d+):(\d+), (\d+)\/(\d+)\/(\d+)\]/.exec(prePlainText)
+        if(sendTimeMatcher) {
+            const hour = sendTimeMatcher[1]
+            const minute = sendTimeMatcher[2]
+            const day = sendTimeMatcher[3]
+            const month = sendTimeMatcher[4]
+            const year = sendTimeMatcher[5]
+            const sendTimeStr = `${year}-${month}-${day} ${hour}:${minute}`
+            sendTime = Date.parse(sendTimeStr) / 1000
+        } else {
+            console.log('Parsed date error: ', prePlainText)
+        }
     }
 
     // 消息文本
@@ -147,7 +162,7 @@ function getMessage(messageRow) {
     return new Message(messageType, groupId, messageId, sender, sendTime, messageText, value)
 }
 
-function sendMessage(messageOfGroup) {
+function sendMessage(messageOfGroup, message) {
     // 组装内容
     // const inputEle = document.querySelector("footer p.selectable-text")
     // const span = document.createElement('span')
@@ -161,8 +176,13 @@ function sendMessage(messageOfGroup) {
     // const sendBtn = document.querySelector("button[data-testid='compose-btn-send']")
     // sendBtn.click()
 
-    // sendKeys(`Sum: ${messageOfGroup.sum}`)
-    document.execCommand('insertText', false, `【自动发送】 合计金额: ${messageOfGroup.sum}`)
+    if(message.content === CLEAN_BILL_CMD) {
+        console.log(`【自动发送】 已清账！ 清账后合计金额: ${messageOfGroup.sum}`)
+        document.execCommand('insertText', false, `【自动发送】 已清账！ 清账后合计金额: ${messageOfGroup.sum}`)
+    } else {
+        console.log(`【自动发送】 合计金额: ${messageOfGroup.sum}`)
+        document.execCommand('insertText', false, `【自动发送】 合计金额: ${messageOfGroup.sum}`)
+    }
 
     // 发送
     // 点击发送按钮
@@ -179,11 +199,9 @@ function sendMessage(messageOfGroup) {
                 console.log('Notfound send message button')
             }
         }
-    }, 3000)
-
+    }, 500)
 
     // 按Enter发送
-
     // console.log('发送回车键')
     // // 回车发送
     // inputDiv.dispatchEvent(new KeyboardEvent('keydown', {keyCode: 13, which: 13, timeStamp: 100}0))
@@ -233,7 +251,8 @@ function fetchMessages() {
                         groupName: groupName,
                         sum: 0,
                         lastSendTime: 0,
-                        messageMap: {},
+                        // 缓存最近一分钟的消息
+                        lastOneMinuteMessagesCache: {},
                         messages: []
                     }
                     messages[message.messageType][message.groupId] = group
@@ -247,7 +266,7 @@ function fetchMessages() {
                     return
                 }
 
-                let messaged = group.messageMap[message.messageId]
+                let messaged = group.lastOneMinuteMessagesCache[message.messageId]
                 if (messaged) {
                     // 消息已解析， 不处理
                     return
@@ -255,29 +274,41 @@ function fetchMessages() {
 
                 // 清账
                 if (message.content === CLEAN_BILL_CMD) {
-                    messages.GROUP[group.groupId].messageMap = {}
-                    messages.GROUP[group.groupId].messages = []
-                    messages.GROUP[group.groupId].sum = 0
+                    // group.lastOneMinuteMessagesCache = {}
+                    group.messages = []
+                    group.sum = 0
                 } else {
                     // 计算金额
                     calculationSum(group, message)
+                    // 保存消息
+                    group.messages.push(message)
                 }
-                // 保存消息
-                group.messages.push(message)
-                group.messageMap[message.messageId] = message
+
+                group.lastOneMinuteMessagesCache[message.messageId] = message
                 // 更新最后一条消息发送时间
                 if(group.lastSendTime < message.sendTime) {
                     group.lastSendTime = message.sendTime
+
+                    // 清除已过期的缓存消息
+                    const expiredMessageIds = []
+                    for(let cacheMessageId in group.lastOneMinuteMessagesCache) {
+                        if(group.lastOneMinuteMessagesCache[cacheMessageId].sendTime < group.lastSendTime) {
+                            expiredMessageIds.push(cacheMessageId)
+                        }
+                    }
+                    console.log('Deleted expired messages: ', expiredMessageIds)
+                    expiredMessageIds.forEach(expiredMessageId => delete group.lastOneMinuteMessagesCache[expiredMessageId])
                 }
+                console.log('Current cached messages: ', group.lastOneMinuteMessagesCache)
 
                 // 发送汇总
-                sendMessage(group)
+                sendMessage(group, message)
 
                 // 更新本地缓存
                 localStorage.setItem('robotMessages', JSON.stringify(messages))
 
                 // 显示消息到悬浮框
-                putMessage(group, message)
+                appendMessage(group, message)
 
                 console.log('message=', message)
             }
