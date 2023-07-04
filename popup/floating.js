@@ -27,7 +27,7 @@ export function appendMessage(group, message) {
         groupTitleElement = $(`<h3 id="g-${message.groupId}-title"></h3>`)
         groupElement.append(groupTitleElement)
         // 群组消息列表
-        groupMessagesElement = $(`<ul id="groupList" style="position: absolute; left:132px; top: 0px; border: 1px solid #ccc; background-color: #fff; z-index: 999999999; border: 1px solid #ccc; text-align: center; display:none; width: max-content;"></ul>`)
+        groupMessagesElement = $(`<ul id="groupList" style="position: absolute; left:142px; top: 0px; border: 1px solid #ccc; background-color: #fff; z-index: 999999999; border: 1px solid #ccc; text-align: center; display:none; width: max-content;"></ul>`)
         groupElement.append(groupMessagesElement)
 
         totalBill = $(`<li style="padding:8px 20px; border-bottom: 1px solid #ccc" class="bill-head">Total Bill=${group.sum}</li>`)
