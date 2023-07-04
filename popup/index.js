@@ -221,9 +221,6 @@ function calculationSum(messageOfGroup, message) {
         // 保留两位小数
         messageOfGroup.sum = scaleNumber(messageOfGroup.sum / message.value)
     }
-
-    // 记录当前和
-    message.sum = messageOfGroup.sum
 }
 
 function fetchMessages() {
@@ -280,6 +277,10 @@ function fetchMessages() {
                 } else {
                     // 计算金额
                     calculationSum(group, message)
+
+                    // 记录当前和
+                    message.sum = group.sum
+
                     // 保存消息
                     group.messages.push(message)
                 }
@@ -316,7 +317,6 @@ function fetchMessages() {
 
     }   // End if..else
 
-    console.log('setTimeout fetchMessages')
     setTimeout(fetchMessages, 1000)
 }
 

@@ -1,4 +1,5 @@
 import $ from 'jquery'
+import moment from 'moment'
 
 // 悬浮窗
 export function appendMessage(group, message) {
@@ -30,19 +31,24 @@ export function appendMessage(group, message) {
         groupMessagesElement = $(`<ul id="groupList" style="position: absolute; left:142px; top: 0px; border: 1px solid #ccc; background-color: #fff; z-index: 999999999; border: 1px solid #ccc; text-align: center; display:none; width: max-content;"></ul>`)
         groupElement.append(groupMessagesElement)
 
-        totalBill = $(`<li style="padding:8px 20px; border-bottom: 1px solid #ccc" class="bill-head">Total Bill=${group.sum}</li>`)
+        // 第一行显示总账
+        totalBill = $(`<li style="padding:8px 20px; border-bottom: 1px solid #ccc" class="bill-head">Total Bill=<span class="bill-num">${group.sum}</span>&nbsp;</li>`)
         groupMessagesElement.append(totalBill)
+
+        // 复制按钮
+        const copyBtn = $(`<a href="JavaScript:void(0)" class="copy">复制</a>`).click((e) => copyBills(e, group))
+        totalBill.append(copyBtn)
     } else {
         groupTitleElement = $('h3', groupElement)
         groupMessagesElement = $('ul', groupElement)
         totalBill = $('#groupList > li.bill-head', groupElement)
     }
 
+    // 更新总账
+    $(".bill-num", totalBill).html(`${group.sum}`)
+
     // 设置/更新群组名称
     groupTitleElement.html(`<div style="color:#000; cursor: pointer;word-break: break-all;">${group.groupName}(${group.sum})</div>`)
-
-    // 设置总账
-    totalBill.html(`Total Bill=${group.sum}`)
 
     if(group.messages.length === 0) {
         // 清空消息
@@ -52,7 +58,7 @@ export function appendMessage(group, message) {
         //     ${message.value}=
         const messageElement = $(`<li style="padding:8px 20px; border-bottom: 1px solid #ccc">[${message.sum}]: ${message.content}</li>`)
         // 正序
-        $(`#g-${message.groupId} ul`).append(messageElement);
+        groupMessagesElement.append(messageElement);
         // 倒序
         // $(`#g-${message.groupId} ul li`).first().after(messageElement);
         // groupMessagesElement.prepend(messageElement)
@@ -72,6 +78,23 @@ function bindElementForVisible(id) {
         // console.log('#groupListhide',$(`#${id} #groupList`));
         $(`#${id} #groupList`).hide()
     });
+}
+
+// 复制账单
+function copyBills(e, group) {
+    const clipboard = navigator.clipboard
+
+    let content = '发送时间,发送内容,变化金额,总账单\r\n'
+    group.messages.forEach(message => {
+        // 发送时间,发送内容,变化金额,当前账单
+        // message.sendTime,message.content,message.value,message.sum
+        const sendTimeFormat = moment(new Date(message.sendTime * 1000)).format('YYYY-MM-DD hh:mm')
+        const operator = message.content.substring(0, 1)
+        content += `${sendTimeFormat},'${message.content},'${operator}${message.value},${message.sum}\r\n`
+    })
+
+    // 写入到剪贴板
+    clipboard.writeText(content)
 }
 
 function clearGroup(group) {
